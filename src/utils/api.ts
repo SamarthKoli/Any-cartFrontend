@@ -114,9 +114,6 @@ class ApiService {
       
       // Try a simple endpoint that doesn't require auth
       const response = await fetch(`${API_BASE_URL}/api/v1/categories/viewAll`, {
-      }
-      )
-      const response = await fetch(`${API_BASE_URL}/api/v1/categories/viewAll`, {
         signal: controller.signal,
         method: 'GET',
         headers: {
