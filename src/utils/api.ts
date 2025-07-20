@@ -112,14 +112,15 @@ class ApiService {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 3000); // 3 second timeout
       
-      // Try to connect to a simple endpoint to check if backend is running
+      // Try a simple endpoint that doesn't require auth
+      const response = await fetch(`${API_BASE_URL}/api/v1/categories/viewAll`, {
       const response = await fetch(`${API_BASE_URL}/api/v1/categories/viewAll`, {
         signal: controller.signal,
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
         }
-      });
+      return response.ok || response.status === 401; // 401 means backend is running but needs auth
       
       clearTimeout(timeoutId);
       return response.ok || response.status === 401; // 401 means backend is running but needs auth
@@ -220,6 +221,15 @@ class ApiService {
         } else if (endpoint.includes('/auth/login')) {
           response = 'mock-jwt-token-12345';
         } else if (endpoint.includes('/auth/register')) {
+          response = { 
+            id: 1, 
+            email: 'user@example.com', 
+            firstName: 'John',
+            lastName: 'Doe',
+            role: 'User',
+            address: '123 Main St, New York, NY 10001'
+          };
+        } else if (endpoint.includes('/auth/profile')) {
           response = { 
             id: 1, 
             email: 'user@example.com', 

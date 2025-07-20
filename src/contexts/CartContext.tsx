@@ -42,11 +42,20 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }, [isAuthenticated]);
 
   const refreshCart = async () => {
+    if (!isAuthenticated) {
+      setCart(null);
+      return;
+    }
+    
     try {
       const cartData = await apiService.getCart();
       setCart(cartData);
     } catch (error) {
       console.error('Failed to fetch cart:', error);
+      // If it's an auth error, clear the cart
+      if (error instanceof Error && error.message.includes('403')) {
+        setCart(null);
+      }
     }
   };
 
