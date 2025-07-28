@@ -92,13 +92,24 @@ const mockData = {
 class ApiService {
   private isBackendAvailable = true;
 
-  private getAuthHeaders(): HeadersInit {
-    const token = localStorage.getItem('token');
-    return {
-      'Content-Type': 'application/json',
-      ...(token && { Authorization: `Bearer ${token}` }),
-    };
+ private getAuthHeaders(): HeadersInit {
+  const token = localStorage.getItem('token');
+  console.log('API getAuthHeaders - Token:', token ? 'Present' : 'Missing');
+  console.log('API getAuthHeaders - Token length:', token?.length);
+  
+  if (!token) {
+    console.warn('No token found in localStorage');
   }
+  
+  const headers = {
+    'Content-Type': 'application/json',
+    ...(token && { Authorization: `Bearer ${token}` }),
+  };
+  
+  console.log('API getAuthHeaders - Headers:', headers);
+  return headers;
+}
+
 
   private getAuthHeadersMultipart(): HeadersInit {
     const token = localStorage.getItem('token');
@@ -131,46 +142,49 @@ class ApiService {
     }
   }
 
-  async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-    // Check if backend is available on first request or if we think it's available
-    if (this.isBackendAvailable) {
-      const url = `${API_BASE_URL}${endpoint}`;
-      const config = {
-        headers: this.getAuthHeaders(),
-        ...options,
-      };
+  // Add this method to your ApiService class in src/utils/api.ts
 
-      try {
-        const response = await fetch(url, config);
-        
-        if (!response.ok) {
-          const errorText = await response.text();
-          throw new Error(errorText || `HTTP error! status: ${response.status}`);
-        }
 
-        const contentType = response.headers.get('content-type');
-        if (contentType && contentType.includes('application/json')) {
-          return await response.json();
-        }
-        
-        return await response.text() as unknown as T;
-      } catch (error) {
-        console.error('API request failed:', error);
-        // Check if backend is still available
-        this.isBackendAvailable = await this.checkBackendAvailability();
-        
-        if (!this.isBackendAvailable) {
-          console.warn('Backend not available, falling back to mock data');
-          return this.getMockResponse<T>(endpoint, options.method || 'GET');
-        }
-        throw error;
-      }
-    } else {
-      // Backend not available, use mock data
-      console.warn('Backend not available, using mock data');
-      return this.getMockResponse<T>(endpoint, options.method || 'GET');
+ async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+  const url = `${API_BASE_URL}${endpoint}`;
+  const config = {
+    headers: this.getAuthHeaders(),
+    ...options,
+  };
+
+  console.log('API Request:', {
+    url,
+    method: options.method || 'GET',
+    headers: config.headers
+  });
+
+  try {
+    const response = await fetch(url, config);
+    
+    console.log('API Response:', {
+      status: response.status,
+      statusText: response.statusText,
+      ok: response.ok
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('API Error Response:', errorText);
+      throw new Error(errorText || `HTTP error! status: ${response.status}`);
     }
+
+    const contentType = response.headers.get('content-type');
+    if (contentType && contentType.includes('application/json')) {
+      return await response.json();
+    }
+    
+    return await response.text() as unknown as T;
+  } catch (error) {
+    console.error('API request failed:', error);
+    throw error;
   }
+}
+
 
   private getMockResponse<T>(endpoint: string, method: string): Promise<T> {
     return new Promise((resolve) => {
